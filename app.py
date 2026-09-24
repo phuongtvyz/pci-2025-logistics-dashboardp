@@ -159,44 +159,73 @@ with tab1:
         "trên 9 thành phần PCI 2025, với trọng số bằng nhau."
     )
 
-    # --------------------------------------------------------
-    # 1. Chuẩn bị dữ liệu xếp hạng
-    # --------------------------------------------------------
+# --------------------------------------------------------
+# 1. Chuẩn bị dữ liệu xếp hạng
+# --------------------------------------------------------
 
-    ranking_df = (
-        df[
-            [
-                "Tỉnh/Thành phố",
-                score_col,
-                rank_col,
-                cluster_col
-            ]
+ranking_df = (
+    df[
+        [
+            "Tỉnh/Thành phố",
+            score_col,
+            rank_col,
+            cluster_col
         ]
-        .sort_values(
-            by=score_col,
-            ascending=True
-        )
-        .copy()
+    ]
+    .sort_values(
+        by=score_col,
+        ascending=False
     )
+    .copy()
+)
 
-    # --------------------------------------------------------
-    # 2. Biểu đồ xếp hạng
-    # --------------------------------------------------------
+# Đảo thứ tự để điểm cao nhất nằm trên cùng
+ranking_plot_df = ranking_df.iloc[::-1].copy()
 
-    fig = px.bar(
-        ranking_df,
-        x=score_col,
-        y="Tỉnh/Thành phố",
-        orientation="h",
-        text=score_col,
-        title="Điểm môi trường kinh doanh tổng hợp"
-    )
 
-    # Hiển thị điểm trên từng thanh
-    fig.update_traces(
-        texttemplate="%{text:.2f}",
-        textposition="outside"
-    )
+# --------------------------------------------------------
+# 2. Biểu đồ xếp hạng
+# --------------------------------------------------------
+
+fig = px.bar(
+    ranking_plot_df,
+    x=score_col,
+    y="Tỉnh/Thành phố",
+    orientation="h",
+    text=score_col,
+    title="Điểm môi trường kinh doanh tổng hợp"
+)
+
+fig.update_traces(
+    texttemplate="%{text:.2f}",
+    textposition="outside"
+)
+
+fig.update_layout(
+    xaxis_title="Điểm môi trường kinh doanh",
+    yaxis_title="",
+
+    xaxis=dict(
+        range=[0, 10],
+        dtick=1
+    ),
+
+    height=1200,
+
+    margin=dict(
+        l=20,
+        r=80,
+        t=70,
+        b=50
+    ),
+
+    showlegend=False
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
 
     # --------------------------------------------------------
     # 3. Cấu hình trục và giao diện biểu đồ
