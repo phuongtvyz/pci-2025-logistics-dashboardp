@@ -130,7 +130,6 @@ col4.metric(
     df[cluster_col].nunique()
 )
 
-
 # ============================================================
 # 8. TABS
 # ============================================================
@@ -144,7 +143,6 @@ tab1, tab2, tab3, tab4 = st.tabs(
     ]
 )
 
-
 # ============================================================
 # TAB 1 — RANKING
 # ============================================================
@@ -155,23 +153,78 @@ with tab1:
         "Xếp hạng môi trường kinh doanh"
     )
 
-    ranking_df = df.sort_values(
-        by=score_col,
-        ascending=False
-    ).copy()
+    st.caption(
+        "Xếp hạng được tính từ điểm môi trường kinh doanh tổng hợp "
+        "trên 9 thành phần PCI 2025, với trọng số bằng nhau."
+    )
+
+    # --------------------------------------------------------
+    # 1. Chuẩn bị dữ liệu xếp hạng
+    # --------------------------------------------------------
+
+    ranking_df = (
+        df[
+            [
+                "Tỉnh/Thành phố",
+                score_col,
+                rank_col,
+                cluster_col
+            ]
+        ]
+        .sort_values(
+            by=score_col,
+            ascending=True
+        )
+        .copy()
+    )
+
+    # --------------------------------------------------------
+    # 2. Biểu đồ xếp hạng
+    # --------------------------------------------------------
 
     fig = px.bar(
         ranking_df,
         x=score_col,
         y="Tỉnh/Thành phố",
         orientation="h",
+        text=score_col,
         title="Điểm môi trường kinh doanh tổng hợp"
     )
 
+    # Hiển thị điểm trên từng thanh
+    fig.update_traces(
+        texttemplate="%{text:.2f}",
+        textposition="outside"
+    )
+
+    # --------------------------------------------------------
+    # 3. Cấu hình trục và giao diện biểu đồ
+    # --------------------------------------------------------
+
     fig.update_layout(
-        yaxis={
-            "categoryorder": "total ascending"
-        }
+        xaxis_title="Điểm môi trường kinh doanh",
+        yaxis_title="",
+        xaxis=dict(
+            range=[
+                0,
+                max(10, ranking_df[score_col].max() + 1)
+            ],
+            dtick=1
+        ),
+        yaxis=dict(
+            categoryorder="array",
+            categoryarray=ranking_df[
+                "Tỉnh/Thành phố"
+            ].tolist()
+        ),
+        height=900,
+        margin=dict(
+            l=20,
+            r=80,
+            t=70,
+            b=50
+        ),
+        showlegend=False
     )
 
     st.plotly_chart(
@@ -179,19 +232,40 @@ with tab1:
         use_container_width=True
     )
 
-    st.dataframe(
-        ranking_df[
+    # --------------------------------------------------------
+    # 4. Bảng xếp hạng
+    # --------------------------------------------------------
+
+    st.subheader("Bảng xếp hạng")
+
+    ranking_table = (
+        df[
             [
                 "Tỉnh/Thành phố",
                 score_col,
                 rank_col,
                 cluster_col
             ]
-        ],
+        ]
+        .sort_values(
+            by=[rank_col, score_col],
+            ascending=[True, False]
+        )
+        .copy()
+    )
+
+    ranking_table.columns = [
+        "Tỉnh/Thành phố",
+        "Điểm tổng hợp",
+        "Xếp hạng",
+        "Ward Cluster"
+    ]
+
+    st.dataframe(
+        ranking_table,
         use_container_width=True,
         hide_index=True
     )
-
 
 # ============================================================
 # TAB 2 — CLUSTERING
