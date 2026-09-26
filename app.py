@@ -588,7 +588,7 @@ Phân tích dữ liệu bằng Python / PySpark và trực quan hóa bằng Stre
 # Thêm Biểu đồ Radar so sánh 2 địa phương trong Tab Phân tích
 import plotly.graph_objects as go
 
-st.subheader("⚔️ So sánh hồ sơ 9 thành phần PCI giữa hai địa phương (Radar Chart)")
+st.subheader("So sánh hồ sơ 9 thành phần PCI giữa hai địa phương (Radar Chart)")
 col_prov1, col_prov2 = st.columns(2)
 with col_prov1:
     prov1 = st.selectbox("Chọn địa phương 1", df[province_col].unique(), index=0)
@@ -605,7 +605,7 @@ fig_radar.add_trace(go.Scatterpolar(r=v2, theta=categories, fill='toself', name=
 fig_radar.update_layout(
     polar=dict(radialaxis=dict(visible=True, range=[0, 10])),
     showlegend=True,
-    title=f"So sánh năng lực PCI: {prov1} vs {prov2}"
+    title=f"So sánh hồ sơ 9 thành phần PCI giữa hai địa phương: {prov1} vs {prov2}"
 )
 st.plotly_chart(fig_radar, use_container_width=True)
 
