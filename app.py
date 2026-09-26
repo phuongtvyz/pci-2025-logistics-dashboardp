@@ -580,10 +580,9 @@ tuyệt đối của các địa phương.
     heatmap_df = cluster_profile.copy()
 
     heatmap_df.columns = [
-        f"Cluster {int(c)}"
-        for c in heatmap_df.columns
-    ]
-
+    f"Cluster {c}"
+    for c in heatmap_df.columns
+]
 
     heatmap_df.index = [
 
@@ -702,8 +701,8 @@ hơn tuyệt đối.
 
 
     st.subheader(
-        f"Địa phương thuộc Cluster {int(selected_cluster)}"
-    )
+    f"Địa phương thuộc Cluster {selected_cluster}"
+)
 
 
     st.dataframe(
