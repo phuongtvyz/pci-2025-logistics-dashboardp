@@ -585,7 +585,6 @@ tuyệt đối của các địa phương.
 ]
 
     heatmap_df.index = [
-
         col.replace(
             "PCI_",
             ""
