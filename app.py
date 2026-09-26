@@ -313,16 +313,13 @@ tab1, tab2, tab3, tab4 = st.tabs(
     ]
 )
 
-
 # ============================================================
 # TAB 1 — RANKING
 # ============================================================
 
 with tab1:
 
-    st.subheader(
-        "Xếp hạng môi trường kinh doanh"
-    )
+    st.subheader("Xếp hạng môi trường kinh doanh")
 
     st.caption(
         "Xếp hạng được tính từ điểm môi trường kinh doanh "
@@ -330,13 +327,11 @@ with tab1:
         "với trọng số bằng nhau."
     )
 
-
     # --------------------------------------------------------
-    # Ranking dataframe
+    # FULL RANKING
     # --------------------------------------------------------
 
     ranking_df = (
-
         df[
             [
                 province_col,
@@ -345,164 +340,102 @@ with tab1:
                 cluster_col
             ]
         ]
-
         .sort_values(
-            by=[
-                rank_col,
-                score_col
-            ],
-            ascending=[
-                True,
-                False
-            ]
+            by=[rank_col, score_col],
+            ascending=[True, False]
         )
-
         .copy()
-
     )
 
-
     # --------------------------------------------------------
-    # Bar chart
+    # TOP 10 CHART
     # --------------------------------------------------------
 
-    ranking_plot_df = (
+    st.subheader("Top 10 địa phương theo điểm tổng hợp")
 
+    top10 = (
         ranking_df
-
+        .sort_values(
+            by=score_col,
+            ascending=False
+        )
+        .head(10)
         .sort_values(
             by=score_col,
             ascending=True
         )
-
-        .copy()
-
     )
-
 
     fig = px.bar(
-
-        ranking_plot_df,
-
+        top10,
         x=score_col,
-
         y=province_col,
-
         orientation="h",
-
         text=score_col,
-
-        title=(
-            "Điểm môi trường kinh doanh "
-            "tổng hợp theo địa phương"
-        )
-
+        title="Top 10 địa phương"
     )
-
 
     fig.update_traces(
-
         texttemplate="%{text:.2f}",
-
         textposition="outside"
-
     )
-
 
     fig.update_layout(
-
-        xaxis_title=(
-            "Điểm môi trường kinh doanh"
-        ),
-
+        xaxis_title="Điểm môi trường kinh doanh",
         yaxis_title="",
-
         xaxis=dict(
-
-            range=[
-                0,
-                10
-            ],
-
+            range=[0, 10],
             dtick=1
-
         ),
-
-        height=1200,
-
+        height=600,
         margin=dict(
-
             l=20,
-
             r=80,
-
             t=70,
-
             b=50
-
         ),
-
         showlegend=False
-
     )
-
 
     st.plotly_chart(
-
         fig,
-
         use_container_width=True
-
     )
 
-
     # --------------------------------------------------------
-    # Ranking table
+    # FULL TABLE
     # --------------------------------------------------------
 
-    st.subheader(
-        "Bảng xếp hạng"
-    )
-
+    st.subheader("Bảng xếp hạng đầy đủ 34 địa phương")
 
     ranking_table = ranking_df.copy()
 
-
     ranking_table.columns = [
-
         "Tỉnh/Thành phố",
-
         "Điểm tổng hợp",
-
         "Xếp hạng",
-
         "Ward Cluster"
-
     ]
 
-
     st.dataframe(
-
         ranking_table,
-
         use_container_width=True,
-
-        hide_index=True
-
+        hide_index=True,
+        height=700
     )
-
 
     st.info(
         """
-**Cách đọc kết quả:** Điểm tổng hợp cao hơn thể hiện mức độ
-thuận lợi tương đối cao hơn theo 9 thành phần PCI được đưa vào
-mô hình và trọng số bằng nhau.
+Điểm tổng hợp được xây dựng từ 9 thành phần PCI sau khi
+chuẩn hóa về thang 0–10 và sử dụng trọng số bằng nhau.
 
-Kết quả này không đồng nghĩa với việc địa phương đó có chi phí
-logistics thấp hơn hoặc là vị trí tối ưu để đặt kho.
+Điểm cao hơn phản ánh mức độ thuận lợi tương đối cao hơn
+trong phạm vi các thành phần PCI được đưa vào mô hình.
+
+Kết quả không phải là mô hình tối ưu hóa vị trí kho hoặc
+trung tâm hoàn tất đơn hàng.
 """
     )
-
 
 # ============================================================
 # TAB 2 — CLUSTERING
