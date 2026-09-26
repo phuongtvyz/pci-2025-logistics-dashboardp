@@ -585,27 +585,82 @@ Phân tích dữ liệu bằng Python / PySpark và trực quan hóa bằng Stre
 """
 )
 
-# Thêm Biểu đồ Radar so sánh 2 địa phương trong Tab Phân tích
-import plotly.graph_objects as go
+# ============================================================
+# UPGRADE 1 – RADAR CHART
+# ============================================================
 
-st.subheader("So sánh hồ sơ 9 thành phần PCI giữa hai địa phương (Radar Chart)")
-col_prov1, col_prov2 = st.columns(2)
-with col_prov1:
-    prov1 = st.selectbox("Chọn địa phương 1", df[province_col].unique(), index=0)
-with col_prov2:
-    prov2 = st.selectbox("Chọn địa phương 2", df[province_col].unique(), index=1)
+st.subheader("So sánh hồ sơ PCI giữa hai địa phương")
 
-v1 = df[df[province_col] == prov1][pci_cols].values.flatten()
-v2 = df[df[province_col] == prov2][pci_cols].values.flatten()
-categories = [c.replace("PCI_", "") for c in pci_cols]
+province_list = sorted(df[province_col].dropna().unique().tolist())
+
+col_radar_1, col_radar_2 = st.columns(2)
+
+with col_radar_1:
+    province_a = st.selectbox(
+        "Địa phương 1",
+        province_list,
+        index=0,
+        key="radar_province_a"
+    )
+
+with col_radar_2:
+    default_b = 1 if len(province_list) > 1 else 0
+
+    province_b = st.selectbox(
+        "Địa phương 2",
+        province_list,
+        index=default_b,
+        key="radar_province_b"
+    )
+
+
+radar_a = df[df[province_col] == province_a].iloc[0]
+radar_b = df[df[province_col] == province_b].iloc[0]
 
 fig_radar = go.Figure()
-fig_radar.add_trace(go.Scatterpolar(r=v1, theta=categories, fill='toself', name=prov1))
-fig_radar.add_trace(go.Scatterpolar(r=v2, theta=categories, fill='toself', name=prov2))
-fig_radar.update_layout(
-    polar=dict(radialaxis=dict(visible=True, range=[0, 10])),
-    showlegend=True,
-    title=f"So sánh hồ sơ 9 thành phần PCI giữa hai địa phương: {prov1} vs {prov2}"
-)
-st.plotly_chart(fig_radar, use_container_width=True)
 
+fig_radar.add_trace(
+    go.Scatterpolar(
+        r=[radar_a[c] for c in cluster_cols],
+        theta=[
+            c.replace("PCI_", "PCI ")
+            for c in cluster_cols
+        ],
+        fill="toself",
+        name=province_a
+    )
+)
+
+fig_radar.add_trace(
+    go.Scatterpolar(
+        r=[radar_b[c] for c in cluster_cols],
+        theta=[
+            c.replace("PCI_", "PCI ")
+            for c in cluster_cols
+        ],
+        fill="toself",
+        name=province_b
+    )
+)
+
+fig_radar.update_layout(
+    polar=dict(
+        radialaxis=dict(
+            visible=True,
+            range=[0, 10]
+        )
+    ),
+    title="So sánh 9 thành phần PCI",
+    height=650
+)
+
+st.plotly_chart(
+    fig_radar,
+    use_container_width=True
+)
+
+st.caption(
+    "Các giá trị PCI đã được chuẩn hóa về thang 0–10. "
+    "Radar chart dùng để so sánh hồ sơ tương đối giữa hai địa phương, "
+    "không phải để xác định quan hệ nhân quả."
+)
