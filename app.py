@@ -23,6 +23,7 @@ Lưu ý:
     trung tâm phân phối hoặc fulfillment center.
 """
 
+import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -61,34 +62,22 @@ trung tâm phân phối hoặc trung tâm hoàn tất đơn hàng.
 
 
 # ============================================================
-# 3. LOAD DATA
+# 3. LOAD DATA (ĐÃ SỬA ĐƯỜNG DẪN TỰ ĐỘNG THEO THƯ MỤC CỦA SCRIPT)
 # ============================================================
 
 @st.cache_data
 def load_data():
-
-    file_path = "pci_2025_dashboard.csv"
-
-    df = pd.read_csv(
-        file_path,
-        encoding="utf-8-sig"
-    )
-
+    base_dir = os.path.dirname(__file__)
+    file_path = os.path.join(base_dir, "pci_2025_dashboard.csv")
+    df = pd.read_csv(file_path, encoding="utf-8-sig")
     return df
 
 
 try:
-
     df = load_data()
-
 except Exception as e:
-
-    st.error(
-        "Không thể đọc file `pci_2025_dashboard.csv`."
-    )
-
+    st.error("Không thể đọc file `pci_2025_dashboard.csv`.")
     st.code(str(e))
-
     st.stop()
 
 
@@ -99,33 +88,20 @@ except Exception as e:
 province_col = "Tỉnh/Thành phố"
 
 pci_cols = [
-
     "PCI_1: Gia nhập thị trường",
-
     "PCI_2: Tiếp cận đất đai",
-
     "PCI_3: Tính minh bạch",
-
     "PCI_4: Chi phí tuân thủ hành chính",
-
     "PCI_5: Chi phí không chính thức",
-
     "PCI_6: Cạnh tranh bình đẳng",
-
     "PCI_7: Hỗ trợ doanh nghiệp",
-
     "PCI_8: Thiết chế pháp lý",
-
     "PCI_9: Chính quyền kiến tạo"
-
 ]
 
 score_col = "Điểm môi trường kinh doanh tổng hợp"
-
 rank_col = "Xếp hạng"
-
 cluster_col = "Ward_Cluster"
-
 silhouette_col = "Silhouette"
 
 
@@ -134,43 +110,23 @@ silhouette_col = "Silhouette"
 # ============================================================
 
 required_cols = [
-
     province_col,
-
     *pci_cols,
-
     score_col,
-
     rank_col,
-
     cluster_col,
-
     silhouette_col
-
 ]
 
 missing_cols = [
-
-    col
-    for col in required_cols
-    if col not in df.columns
-
+    col for col in required_cols if col not in df.columns
 ]
 
 if missing_cols:
-
-    st.error(
-        "Dataset thiếu các cột bắt buộc:"
-    )
-
+    st.error("Dataset thiếu các cột bắt buộc:")
     st.write(missing_cols)
-
-    st.write(
-        "Các cột hiện có trong dataset:"
-    )
-
+    st.write("Các cột hiện có trong dataset:")
     st.write(df.columns.tolist())
-
     st.stop()
 
 
@@ -180,65 +136,27 @@ if missing_cols:
 
 df = df.copy()
 
-df[province_col] = (
-    df[province_col]
-    .astype(str)
-    .str.strip()
-)
-
-df = df[
-    df[province_col].notna()
-]
-
-df = df[
-    df[province_col] != ""
-]
-
-df = df.drop_duplicates(
-    subset=[province_col]
-)
+df[province_col] = df[province_col].astype(str).str.strip()
+df = df[df[province_col].notna()]
+df = df[df[province_col] != ""]
+df = df.drop_duplicates(subset=[province_col])
 
 for col in pci_cols:
+    df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    df[col] = pd.to_numeric(
-        df[col],
-        errors="coerce"
-    )
-
-df[score_col] = pd.to_numeric(
-    df[score_col],
-    errors="coerce"
-)
-
-df[rank_col] = pd.to_numeric(
-    df[rank_col],
-    errors="coerce"
-)
-
-df[cluster_col] = pd.to_numeric(
-    df[cluster_col],
-    errors="coerce"
-)
-
-df[silhouette_col] = pd.to_numeric(
-    df[silhouette_col],
-    errors="coerce"
-)
+df[score_col] = pd.to_numeric(df[score_col], errors="coerce")
+df[rank_col] = pd.to_numeric(df[rank_col], errors="coerce")
+df[cluster_col] = pd.to_numeric(df[cluster_col], errors="coerce")
+df[silhouette_col] = pd.to_numeric(df[silhouette_col], errors="coerce")
 
 
 # ============================================================
 # 7. SIDEBAR
 # ============================================================
 
-st.sidebar.header(
-    "🔎 Bộ lọc"
-)
+st.sidebar.header("🔎 Bộ lọc")
 
-province_options = [
-    "Tất cả"
-] + sorted(
-    df[province_col].unique().tolist()
-)
+province_options = ["Tất cả"] + sorted(df[province_col].unique().tolist())
 
 selected_province = st.sidebar.selectbox(
     "Chọn địa phương",
@@ -251,14 +169,9 @@ selected_province = st.sidebar.selectbox(
 # ============================================================
 
 if selected_province == "Tất cả":
-
     df_selected = df.copy()
-
 else:
-
-    df_selected = df[
-        df[province_col] == selected_province
-    ].copy()
+    df_selected = df[df[province_col] == selected_province].copy()
 
 
 # ============================================================
@@ -267,37 +180,17 @@ else:
 
 col1, col2, col3, col4 = st.columns(4)
 
-
 with col1:
-
-    st.metric(
-        "Số địa phương",
-        df[province_col].nunique()
-    )
-
+    st.metric("Số địa phương", df[province_col].nunique())
 
 with col2:
-
-    st.metric(
-        "Điểm cao nhất",
-        f"{df[score_col].max():.2f}"
-    )
-
+    st.metric("Điểm cao nhất", f"{df[score_col].max():.2f}")
 
 with col3:
-
-    st.metric(
-        "Điểm thấp nhất",
-        f"{df[score_col].min():.2f}"
-    )
-
+    st.metric("Điểm thấp nhất", f"{df[score_col].min():.2f}")
 
 with col4:
-
-    st.metric(
-        "Số nhóm Ward",
-        df[cluster_col].nunique()
-    )
+    st.metric("Số nhóm Ward", df[cluster_col].nunique())
 
 
 # ============================================================
@@ -318,18 +211,12 @@ tab1, tab2, tab3, tab4 = st.tabs(
 # ============================================================
 
 with tab1:
-
     st.subheader("Xếp hạng môi trường kinh doanh")
-
     st.caption(
         "Xếp hạng được tính từ điểm môi trường kinh doanh "
         "tổng hợp trên 9 thành phần PCI 2025, "
         "với trọng số bằng nhau."
     )
-
-    # --------------------------------------------------------
-    # FULL RANKING
-    # --------------------------------------------------------
 
     ranking_df = (
         df[
@@ -347,23 +234,13 @@ with tab1:
         .copy()
     )
 
-    # --------------------------------------------------------
-    # TOP 10 CHART
-    # --------------------------------------------------------
-
     st.subheader("Top 10 địa phương theo điểm tổng hợp")
 
     top10 = (
         ranking_df
-        .sort_values(
-            by=score_col,
-            ascending=False
-        )
+        .sort_values(by=score_col, ascending=False)
         .head(10)
-        .sort_values(
-            by=score_col,
-            ascending=True
-        )
+        .sort_values(by=score_col, ascending=True)
     )
 
     fig = px.bar(
@@ -383,33 +260,17 @@ with tab1:
     fig.update_layout(
         xaxis_title="Điểm môi trường kinh doanh",
         yaxis_title="",
-        xaxis=dict(
-            range=[0, 10],
-            dtick=1
-        ),
+        xaxis=dict(range=[0, 10], dtick=1),
         height=600,
-        margin=dict(
-            l=20,
-            r=80,
-            t=70,
-            b=50
-        ),
+        margin=dict(l=20, r=80, t=70, b=50),
         showlegend=False
     )
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-    # --------------------------------------------------------
-    # FULL TABLE
-    # --------------------------------------------------------
+    st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("Bảng xếp hạng đầy đủ 34 địa phương")
 
     ranking_table = ranking_df.copy()
-
     ranking_table.columns = [
         "Tỉnh/Thành phố",
         "Điểm tổng hợp",
@@ -442,11 +303,7 @@ trung tâm hoàn tất đơn hàng.
 # ============================================================
 
 with tab2:
-
-    st.subheader(
-        "🔎 Phân nhóm địa phương bằng Ward Clustering"
-    )
-
+    st.subheader("🔎 Phân nhóm địa phương bằng Ward Clustering")
 
     st.markdown(
         """
@@ -455,57 +312,21 @@ không sử dụng trực tiếp điểm tổng hợp hoặc thứ hạng để 
 """
     )
 
-
-    # --------------------------------------------------------
-    # Clustering KPIs
-    # --------------------------------------------------------
-
     c1, c2, c3, c4 = st.columns(4)
 
-
     with c1:
-
-        st.metric(
-            "Số cụm",
-            int(df[cluster_col].nunique())
-        )
-
+        st.metric("Số cụm", int(df[cluster_col].nunique()))
 
     with c2:
-
-        cluster0_size = int(
-            (
-                df[cluster_col] == 0
-            ).sum()
-        )
-
-        st.metric(
-            "Cluster 0",
-            cluster0_size
-        )
-
+        cluster0_size = int((df[cluster_col] == 0).sum())
+        st.metric("Cluster 0", cluster0_size)
 
     with c3:
-
-        cluster1_size = int(
-            (
-                df[cluster_col] == 1
-            ).sum()
-        )
-
-        st.metric(
-            "Cluster 1",
-            cluster1_size
-        )
-
+        cluster1_size = int((df[cluster_col] == 1).sum())
+        st.metric("Cluster 1", cluster1_size)
 
     with c4:
-
-        st.metric(
-            "Silhouette",
-            "0.2905"
-        )
-
+        st.metric("Silhouette", "0.2905")
 
     st.info(
         """
@@ -521,28 +342,14 @@ tuyệt đối của các địa phương.
 """
     )
 
-
-    # --------------------------------------------------------
-    # Cluster profile
-    # --------------------------------------------------------
-
-    st.subheader(
-        "Hồ sơ trung bình của các cụm"
-    )
-
+    st.subheader("Hồ sơ trung bình của các cụm")
 
     cluster_profile = (
-
         df
-
         .groupby(cluster_col)[pci_cols]
-
         .mean()
-
         .round(2)
-
     )
-
 
     cluster_profile_display = (
         cluster_profile
@@ -550,90 +357,41 @@ tuyệt đối của các địa phương.
         .reset_index()
     )
 
-
     cluster_profile_display.columns = [
-
         "Thành phần PCI",
-
         "Cluster 0",
-
         "Cluster 1"
-
     ]
-
 
     st.dataframe(
-
         cluster_profile_display,
-
         use_container_width=True,
-
         hide_index=True
-
     )
 
-
     # --------------------------------------------------------
-    # Heatmap
+    # Heatmap (ĐÃ SỬA LỖI CRASH INDEX INT VÀ SẮP XẾP HÀNG/CỘT)
     # --------------------------------------------------------
 
-    heatmap_df = cluster_profile.copy()
-
-    heatmap_df.columns = [
-    f"Cluster {c}"
-    for c in heatmap_df.columns
-]
-
-    heatmap_df.index = [
-        col.replace(
-            "PCI_",
-            ""
-        )
-
-        for col in heatmap_df.index
-
-    ]
-
+    heatmap_df = cluster_profile.T.copy()
+    heatmap_df.columns = [f"Cluster {c}" for c in heatmap_df.columns]
+    heatmap_df.index = [str(col).replace("PCI_", "") for col in heatmap_df.index]
 
     fig_heatmap = px.imshow(
-
         heatmap_df,
-
         text_auto=".2f",
-
         aspect="auto",
-
-        title=(
-            "Hồ sơ 9 thành phần PCI "
-            "theo cụm"
-        ),
-
+        title="Hồ sơ 9 thành phần PCI theo cụm",
         labels={
             "x": "Cụm",
             "y": "Thành phần PCI",
             "color": "Điểm"
         }
-
     )
 
+    st.plotly_chart(fig_heatmap, use_container_width=True)
 
-    st.plotly_chart(
-
-        fig_heatmap,
-
-        use_container_width=True
-
-    )
-
-
-    # --------------------------------------------------------
-    # Cluster interpretation
-    # --------------------------------------------------------
-
-    st.subheader(
-        "Diễn giải cấu trúc cụm"
-    )
-
+    st.subheader("Diễn giải cấu trúc cụm")
 
     st.markdown(
         """
@@ -653,74 +411,32 @@ hơn tuyệt đối.
 """
     )
 
-
-    # --------------------------------------------------------
-    # Select cluster
-    # --------------------------------------------------------
-
     selected_cluster = st.selectbox(
-
         "Chọn cụm để xem các địa phương",
-
-        sorted(
-            df[cluster_col]
-            .dropna()
-            .unique()
-        )
-
+        sorted(df[cluster_col].dropna().unique())
     )
-
 
     cluster_members = (
-
-        df[
-            df[cluster_col]
-            == selected_cluster
-        ]
-
-        [
-
-            [
-                province_col,
-                score_col,
-                rank_col,
-                silhouette_col
-            ]
-
-        ]
-
-        .sort_values(
-            by=score_col,
-            ascending=False
-        )
-
+        df[df[cluster_col] == selected_cluster]
+        [[
+            province_col,
+            score_col,
+            rank_col,
+            silhouette_col
+        ]]
+        .sort_values(by=score_col, ascending=False)
         .copy()
-
     )
 
-
-    st.subheader(
-    f"Địa phương thuộc Cluster {selected_cluster}"
-)
-
+    st.subheader(f"Địa phương thuộc Cluster {selected_cluster}")
 
     st.dataframe(
-
         cluster_members,
-
         use_container_width=True,
-
         hide_index=True
-
     )
 
-
-    # --------------------------------------------------------
-    # Silhouette note
-    # --------------------------------------------------------
-
     if selected_cluster == 1:
-
         st.warning(
             """
 Trong Cluster 1, **Vĩnh Long có Silhouette = 0.0195**,
@@ -729,17 +445,12 @@ Do đó cần thận trọng khi diễn giải cấu trúc Cluster 1.
 """
         )
 
-
 # ============================================================
 # TAB 3 — PCI ANALYSIS
 # ============================================================
 
 with tab3:
-
-    st.subheader(
-        "📊 Phân tích 9 thành phần PCI"
-    )
-
+    st.subheader("📊 Phân tích 9 thành phần PCI")
 
     st.markdown(
         """
@@ -748,199 +459,63 @@ Các biến PCI trong dataset đã được chuẩn hóa về thang điểm
 """
     )
 
-
-    selected_pci = st.selectbox(
-
-        "Chọn thành phần PCI",
-
-        pci_cols
-
-    )
-
+    selected_pci = st.selectbox("Chọn thành phần PCI", pci_cols)
 
     pci_df = (
-
-        df[
-            [
-                province_col,
-                selected_pci
-            ]
-        ]
-
-        .sort_values(
-            by=selected_pci,
-            ascending=True
-        )
-
+        df[[province_col, selected_pci]]
+        .sort_values(by=selected_pci, ascending=True)
         .copy()
-
     )
-
 
     fig_pci = px.bar(
-
         pci_df,
-
         x=selected_pci,
-
         y=province_col,
-
         orientation="h",
-
         text=selected_pci,
-
         title=selected_pci
-
     )
-
 
     fig_pci.update_traces(
-
         texttemplate="%{text:.2f}",
-
         textposition="outside"
-
     )
-
 
     fig_pci.update_layout(
-
         xaxis_title="Điểm chuẩn hóa (0–10)",
-
         yaxis_title="",
-
-        xaxis=dict(
-
-            range=[
-                0,
-                10
-            ],
-
-            dtick=1
-
-        ),
-
+        xaxis=dict(range=[0, 10], dtick=1),
         height=1000,
-
-        margin=dict(
-
-            l=20,
-
-            r=80,
-
-            t=70,
-
-            b=50
-
-        ),
-
+        margin=dict(l=20, r=80, t=70, b=50),
         showlegend=False
-
     )
 
+    st.plotly_chart(fig_pci, use_container_width=True)
 
-    st.plotly_chart(
+    st.subheader("Thống kê mô tả")
 
-        fig_pci,
-
-        use_container_width=True
-
-    )
-
-
-    # --------------------------------------------------------
-    # Descriptive statistics
-    # --------------------------------------------------------
-
-    st.subheader(
-        "Thống kê mô tả"
-    )
-
-
-    stats_df = (
-
-        df[pci_cols]
-
-        .describe()
-
-        .T
-
-        .round(2)
-
-    )
-
-
-    stats_df = stats_df.reset_index()
-
-
-    stats_df = stats_df.rename(
-
-        columns={
-            "index": "Thành phần PCI"
-        }
-
-    )
-
+    stats_df = df[pci_cols].describe().T.round(2).reset_index()
+    stats_df = stats_df.rename(columns={"index": "Thành phần PCI"})
 
     st.dataframe(
-
         stats_df,
-
         use_container_width=True,
-
         hide_index=True
-
     )
 
+    st.subheader("Ma trận tương quan giữa 9 thành phần PCI")
 
-    # --------------------------------------------------------
-    # Correlation matrix
-    # --------------------------------------------------------
-
-    st.subheader(
-        "Ma trận tương quan giữa 9 thành phần PCI"
-    )
-
-
-    corr_matrix = (
-
-        df[pci_cols]
-
-        .corr()
-
-        .round(2)
-
-    )
-
+    corr_matrix = df[pci_cols].corr().round(2)
 
     fig_corr = px.imshow(
-
         corr_matrix,
-
         text_auto=True,
-
         aspect="auto",
-
-        title=(
-            "Tương quan Pearson giữa "
-            "các thành phần PCI"
-        ),
-
-        labels={
-            "color": "Hệ số tương quan"
-        }
-
+        title="Tương quan Pearson giữa các thành phần PCI",
+        labels={"color": "Hệ số tương quan"}
     )
 
-
-    st.plotly_chart(
-
-        fig_corr,
-
-        use_container_width=True
-
-    )
-
+    st.plotly_chart(fig_corr, use_container_width=True)
 
     st.caption(
         """
@@ -950,17 +525,12 @@ thành quan hệ nhân quả.
 """
     )
 
-
 # ============================================================
 # TAB 4 — DATA
 # ============================================================
 
 with tab4:
-
-    st.subheader(
-        "📋 Dataset phân tích"
-    )
-
+    st.subheader("📋 Dataset phân tích")
 
     st.write(
         f"""
@@ -970,91 +540,37 @@ gồm điểm tổng hợp, xếp hạng, Ward Cluster và Silhouette.
 """
     )
 
-
-    # --------------------------------------------------------
-    # Search
-    # --------------------------------------------------------
-
     search_text = st.text_input(
-
         "Tìm kiếm địa phương",
-
         placeholder="Nhập tên địa phương..."
-
     )
-
 
     if search_text:
-
         data_display = df[
-            df[province_col]
-            .str.contains(
-                search_text,
-                case=False,
-                na=False
-            )
+            df[province_col].str.contains(search_text, case=False, na=False)
         ].copy()
-
     else:
-
         data_display = df.copy()
 
-
     st.dataframe(
-
         data_display,
-
         use_container_width=True,
-
         hide_index=True
-
     )
 
+    st.subheader("Kiểm tra chất lượng dữ liệu")
 
-    # --------------------------------------------------------
-    # Dataset validation
-    # --------------------------------------------------------
-
-    st.subheader(
-        "Kiểm tra chất lượng dữ liệu"
-    )
-
-
-    validation_col1, validation_col2, validation_col3 = (
-        st.columns(3)
-    )
-
+    validation_col1, validation_col2, validation_col3 = st.columns(3)
 
     with validation_col1:
-
-        st.metric(
-            "Số dòng",
-            len(df)
-        )
-
+        st.metric("Số dòng", len(df))
 
     with validation_col2:
-
-        st.metric(
-            "Địa phương duy nhất",
-            df[province_col].nunique()
-        )
-
+        st.metric("Địa phương duy nhất", df[province_col].nunique())
 
     with validation_col3:
-
-        missing_values = int(
-            df[required_cols]
-            .isna()
-            .sum()
-            .sum()
-        )
-
-        st.metric(
-            "Missing values",
-            missing_values
-        )
-
+        missing_values = int(df[required_cols].isna().sum().sum())
+        st.metric("Missing values", missing_values)
 
 # ============================================================
 # 11. FOOTER
