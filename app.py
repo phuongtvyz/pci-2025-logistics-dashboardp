@@ -584,3 +584,26 @@ PCI 2025 Local Business Environment Dashboard |
 Phân tích dữ liệu bằng Python / PySpark và trực quan hóa bằng Streamlit.
 """
 )
+# Thêm Biểu đồ Radar so sánh 2 địa phương trong Tab Phân tích
+import plotly.graph_objects as go
+
+st.subheader("⚔️ So sánh đối đầu giữa 2 địa phương (Radar Chart)")
+col_prov1, col_prov2 = st.columns(2)
+with col_prov1:
+    prov1 = st.selectbox("Chọn địa phương 1", df[province_col].unique(), index=0)
+with col_prov2:
+    prov2 = st.selectbox("Chọn địa phương 2", df[province_col].unique(), index=1)
+
+v1 = df[df[province_col] == prov1][pci_cols].values.flatten()
+v2 = df[df[province_col] == prov2][pci_cols].values.flatten()
+categories = [c.replace("PCI_", "") for c in pci_cols]
+
+fig_radar = go.Figure()
+fig_radar.add_trace(go.Scatterpolar(r=v1, theta=categories, fill='toself', name=prov1))
+fig_radar.add_trace(go.Scatterpolar(r=v2, theta=categories, fill='toself', name=prov2))
+fig_radar.update_layout(
+    polar=dict(radialaxis=dict(visible=True, range=[0, 10])),
+    showlegend=True,
+    title=f"So sánh năng lực PCI: {prov1} vs {prov2}"
+)
+st.plotly_chart(fig_radar, use_container_width=True)
